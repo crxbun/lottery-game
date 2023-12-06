@@ -3,11 +3,15 @@ include Irvine32.inc
 .data
 
 	msg byte "				 Lives Remaining: ",0
-	outOfBounds byte "Your number is out offset bounds please input anumber in range.",0
-	lessMsg byte "Oh! The number is less then your guess",0
+	outOfBounds byte "Your number is out offset bounds please input a number in range.",0
+	lessMsg byte "Oh! The number is less than your guess",0
 	equalMsg byte "WOW! Your guess is correct the number is: ",0
-	greaterMsg byte "Oh! The number is greater then your guess",0
-	allEqualMsg byte "WOW! You guesssed all the numbers correct the last number was: ",0
+	greaterMsg byte "Oh! The number is greater than your guess",0
+	lostMsg byte "WOW! You lost. Better luck next time!",0
+
+	easyMsg byte "Enter a number b/w 1 and 10: ",0
+	medMsg byte "Enter a number b/w 1 and 50: ",0
+	hardMsg byte "Enter a number b/w 1 and 100: ",0
 
 	easyMsg byte "Enter a number b/w 1 and 10: ",0
 	medMsg byte "Enter a number b/w 1 and 50: ",0
@@ -18,13 +22,19 @@ include Irvine32.inc
 	remaining dword 10
 
 	difficultyLevel dword 0
-    difficultyPrompt byte "Select Difficulty Level (0 - Easy, 1 - Medium, 2 - Hard): ", 0
-    difficultyInput dword 0
-
+   difficultyPrompt byte "Select Difficulty Level (0 - Easy, 1 - Medium, 2 - Hard): ", 0
+   difficultyInput dword 0
+    
 	quitPrompt byte "Would you like to quit? (0 - Restart, 1 - Quit): "
 	quitInput dword 0
 
 	upperBound dword 0
+
+	Correct = green
+	DefaultColor = white + (black SHL 4)
+	Incorrect = red
+
+
 
 .code
 main proc
@@ -99,10 +109,11 @@ main proc
 	; Algorithm utilized when user guesses numbers.
 	GuessNum: 
 		; Shows the answer for testing
-		mov eax, random
-		call writedec
+		; mov eax, random
 
-		call crlf
+		; call writedec
+
+		; call crlf
 
 		; Writes out remaining lives
 		mov edx, offset msg
@@ -186,16 +197,25 @@ main proc
 
 		cmp eax, 10
 
-		je quit
+		je Lost
+
 		jl GuessNum
 
 	; Handles if the number guessed is equal to the original 
 	equal:
+		push eax
+		mov eax, Correct
+		call SetTextColor
+		pop eax
+
 		mov edx, offset equalMsg
 		call writestring
 
 		mov edx, random
 		call writedec
+
+		mov eax, DefaultColor
+		call SetTextColor
 
 		call crlf
 		call crlf
@@ -224,24 +244,48 @@ main proc
 
 		call crlf
 		call crlf
-		call crlf
 
-		mov eax, life
-
+		cmp quitInput, 0
+		je SetDifficulty
 		cmp eax, 10
 		
-		je quit
+		je Lost
 		jl GuessNum
 	
 	; Handles if the number guessed is out of bounds
 	boundsError:
+		push eax
+		mov eax, Incorrect
+		call SetTextColor
+		pop eax
+
 		mov edx, offset outOfBounds
+    
 		call writestring
+
+		mov eax, DefaultColor
+		call SetTextColor
 
 		call crlf
 		mov eax,random
 
 		jmp GuessNum
+    
+	Lost:
+		push eax
+		mov eax, Incorrect
+		call SetTextColor
+		pop eax
+
+		mov edx, offset lostMsg
+		call writestring
+
+		mov eax, DefaultColor
+		call SetTextColor
+
+		call crlf
+
+		jmp quit
 
 	quit:
 		

@@ -16,6 +16,10 @@ include Irvine32.inc
 	life dword 0
 	remaining dword 10
 
+	PowerBall = white + (red SHL 4)		; red background and white text
+	NumberBall = black + (white SHL 4)	; white background and black text
+	DefaultColor = white + (black SHL 4)	; black background with white text
+
 .code
 main proc
 	;call for randomized number
@@ -167,8 +171,16 @@ main proc
 		mov edx, offset equalMsg
 		call writestring
 
+		push eax
+		mov eax, NumberBall		; change numberball to black
+		call SetTextColor
+		pop eax
+
 		mov edx, random
 		call writedec
+
+		mov eax, DefaultColor	; change back to default
+		call SetTextColor
 
 		call crlf
 		call crlf
@@ -182,8 +194,16 @@ main proc
 		mov edx, offset allEqualMsg
 		call writestring
 
+		push eax
+		mov eax, PowerBall		; change powerball to red color
+		call SetTextColor
+		pop eax
+		
 		mov edx, random
 		call writedec
+		
+		mov eax, DefaultColor	; change back to default
+		call SetTextColor
 
 		call crlf
 		call crlf

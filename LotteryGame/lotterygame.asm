@@ -29,15 +29,18 @@ include Irvine32.inc
 .code
 main proc
 
-	; Prompts the user to select the difficulty level
-    mov edx, offset difficultyPrompt
-    call writestring
+	jmp SetDifficulty
 
-    ; Reads the difficulty level input
-    call readint
-    mov difficultyLevel, eax
+	SetDifficulty:
+		; Prompts the user to select the difficulty level
+		mov edx, offset difficultyPrompt
+		call writestring
+
+		; Reads the difficulty level input
+		call readint
+		mov difficultyLevel, eax
 		
-	jmp GenerateRandom
+		jmp GenerateRandom
 
     SetUpperBound:
 		; Sets the upper bound based on difficulty level
@@ -96,6 +99,7 @@ main proc
 	; Algorithm utilized when user guesses numbers.
 	GuessNum: 
 		; Shows the answer for testing
+		mov eax, random
 		call writedec
 
 		call crlf
@@ -204,8 +208,11 @@ main proc
 		call readint
 		mov quitInput, eax
 
+		call crlf
+		call crlf
+
 		cmp quitInput, 0
-		je GenerateRandom
+		je SetDifficulty
 
 		cmp quitInput, 1
 		je quit

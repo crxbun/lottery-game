@@ -13,18 +13,14 @@ include Irvine32.inc
 	medMsg byte "Enter a number b/w 1 and 50: ",0
 	hardMsg byte "Enter a number b/w 1 and 100: ",0
 
-	easyMsg byte "Enter a number b/w 1 and 10: ",0
-	medMsg byte "Enter a number b/w 1 and 50: ",0
-	hardMsg byte "Enter a number b/w 1 and 100: ",0
-
 	random dword ?
 	life dword 0
 	remaining dword 10
 
 	difficultyLevel dword 0
-   difficultyPrompt byte "Select Difficulty Level (0 - Easy, 1 - Medium, 2 - Hard): ", 0
-   difficultyInput dword 0
-    
+    difficultyPrompt byte "Select Difficulty Level (0 - Easy, 1 - Medium, 2 - Hard): ", 0
+    difficultyInput dword 0
+
 	quitPrompt byte "Would you like to quit? (0 - Restart, 1 - Quit): "
 	quitInput dword 0
 
@@ -109,11 +105,9 @@ main proc
 	; Algorithm utilized when user guesses numbers.
 	GuessNum: 
 		; Shows the answer for testing
-		; mov eax, random
+		mov eax, random
 
-		; call writedec
-
-		; call crlf
+		call crlf
 
 		; Writes out remaining lives
 		mov edx, offset msg
@@ -198,7 +192,6 @@ main proc
 		cmp eax, 10
 
 		je Lost
-
 		jl GuessNum
 
 	; Handles if the number guessed is equal to the original 
@@ -217,7 +210,6 @@ main proc
 		mov eax, DefaultColor
 		call SetTextColor
 
-		call crlf
 		call crlf
 
 		; Prompts user if they would like to continue playing by restarting or quit
@@ -244,9 +236,10 @@ main proc
 
 		call crlf
 		call crlf
+		call crlf
 
-		cmp quitInput, 0
-		je SetDifficulty
+		mov eax, life
+
 		cmp eax, 10
 		
 		je Lost
@@ -260,7 +253,6 @@ main proc
 		pop eax
 
 		mov edx, offset outOfBounds
-    
 		call writestring
 
 		mov eax, DefaultColor
@@ -270,7 +262,7 @@ main proc
 		mov eax,random
 
 		jmp GuessNum
-    
+
 	Lost:
 		push eax
 		mov eax, Incorrect
@@ -284,8 +276,23 @@ main proc
 		call SetTextColor
 
 		call crlf
+		call crlf
 
-		jmp quit
+		mov edx, offset quitPrompt
+		call writestring
+
+		; Reads in user input (0 for Continue, 1 for Quit)
+		call readint
+		mov quitInput, eax
+
+		call crlf
+		call crlf
+
+		cmp quitInput, 0
+		je SetDifficulty
+
+		cmp quitInput, 1
+		je quit
 
 	quit:
 		

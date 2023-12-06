@@ -3,140 +3,182 @@ include Irvine32.inc
 .data
 
 	msg byte "				 Lives Remaining: ",0
-	mainMsg byte "Enter a number b/w 1 and 69: ",0
-	outOfBounds byte "Your number is out offset bounds please input anumber in range.",0
-	secMsg byte "Enter a number b/w 1 and 26: ",0
-	lessMsg byte "Oh! The number is less then your guess",0
+	outOfBounds byte "Your number is out offset bounds please input a number in range.",0
+	lessMsg byte "Oh! The number is less than your guess",0
 	equalMsg byte "WOW! Your guess is correct the number is: ",0
-	greaterMsg byte "Oh! The number is greater then your guess",0
-	allEqualMsg byte "WOW! You guesssed all the numbers correct the last number was: ",0
+	greaterMsg byte "Oh! The number is greater than your guess",0
+	lostMsg byte "WOW! You lost. Better luck next time!",0
+
+	easyMsg byte "Enter a number b/w 1 and 10: ",0
+	medMsg byte "Enter a number b/w 1 and 50: ",0
+	hardMsg byte "Enter a number b/w 1 and 100: ",0
 
 	random dword ?
-	newRandom dword ?
 	life dword 0
 	remaining dword 10
 
-	PowerBall = white + (red SHL 4)		; red background and white text
-	NumberBall = black + (white SHL 4)	; white background and black text
-	DefaultColor = white + (black SHL 4)	; black background with white text
+	difficultyLevel dword 0
+    difficultyPrompt byte "Select Difficulty Level (0 - Easy, 1 - Medium, 2 - Hard): ", 0
+    difficultyInput dword 0
+
+	quitPrompt byte "Would you like to quit? (0 - Restart, 1 - Quit): "
+	quitInput dword 0
+
+	upperBound dword 0
+
+	Correct = green
+	DefaultColor = white + (black SHL 4)
+	Incorrect = red
+
+
 
 .code
 main proc
-	;call for randomized number
-	call Randomize
 
-	;reminder for abi to fix offset so it ranges 1-69
-	mov eax, 69
+	jmp SetDifficulty
 
-	call RandomRange
-	mov random, eax
-	mov newRandom, 0
+	SetDifficulty:
+		; Prompts the user to select the difficulty level
+		mov edx, offset difficultyPrompt
+		call writestring
 
-	;this shows answer for testing
-	call writedec
-
-	;line break
-	call crlf
-
-	Start:
+		; Reads the difficulty level input
+		call readint
+		mov difficultyLevel, eax
 		
-	
+		jmp GenerateRandom
+
+    SetUpperBound:
+		; Sets the upper bound based on difficulty level
+        cmp difficultyLevel, 0
+        je EasyUpperBound
+        cmp difficultyLevel, 1
+        je MediumUpperBound
+        cmp difficultyLevel, 2
+        je HardUpperBound
+        ret
+
+	; Easy difficulty, between the range 1 - 10
+    EasyUpperBound:
+        mov eax, 9
+		mov upperBound, eax
+		inc upperBound
+        ret
+
+	; Medium difficulty, between range 1 - 50
+    MediumUpperBound:
+        mov eax, 49
+		mov upperBound, eax
+		inc upperBound
+        ret
+
+	; Hard Difficulty, between range 1 - 100
+    HardUpperBound:
+        mov eax, 99
+		mov upperBound, eax
+		inc upperBound
+        ret
+
+	; Generates the random number for each round of play. 
+	GenerateRandom:
+		; The only time GenerateRandom is called is when a new round is beginning, thus remaining lives is 10 and total
+		; lives removed is 0.
+		mov life, 0
+		call Randomize
+		; set the upper bound for the randomized number
+		call SetUpperBound
+		; randomrange checks eax and utilizes the stored value as an upperbound for the randomized number
+		call RandomRange
+		mov random, eax
+		; to exclude zero from the randomized number pool, we simply increment the number by 1
+		; since we increment the randomized number by 1, the upperbound must also be decreased by 1.
+		; for instance, if the number generated is 99 (the upper bound for hard difficulty)
+		; the actual number used would be 100, which is the true upper bound (the highest possible 
+		; randomized number, 99, plus 1).
+		inc random
+		jmp GuessNum
+
 	;Prompts to guess first number with every guess until they match.
 	;Then will jump t second loop for the next number to guess
 	;Goal is to guess all number under the life count
-	FirstNum:
-		;Write out the lives remaining
+
+	; Algorithm utilized when user guesses numbers.
+	GuessNum: 
+		; Shows the answer for testing
+		mov eax, random
+
+		call crlf
+
+		; Writes out remaining lives
 		mov edx, offset msg
 		call writestring
 		
+		; The value stored in 'life' represents the number of lives already lost throughout the span of the game.
+		; When calculating the remaining number of lives, we subtract the number of lives lost from the total
+		; number of lives possible, which is 10.
 		mov eax, life
-		cmp eax, 10
 		mov remaining, 10
 		sub remaining, eax
 		mov eax, remaining
 		
+		; Visually appends the current remaining lives to the end of the message
 		call writedec
 		call crlf
 		call crlf
 
+		; Display prompt for range of numbers to be guessed by the user based on selected difficulty level
+		call DisplayMessage
 
-		mov edx, offset mainMsg
-		call writestring
-
+		; Stores user input into eax 
 		call readdec
 		call crlf
 
-		;Check bounds of guessed number
+		; Checks bounds of guessed number
 		cmp eax,1
 		jl boundsError
-		cmp eax, 69
+		cmp eax, upperBound
 		jg boundsError
 		
-		;check equality and give hint
+		; Checks for equality and give hints
 		inc life
 		cmp eax, random
 		jl less
 		je equal
 		jg greater
-		
-	;Jump to next number to guesss
-	Next:
-		mov eax,0
-		call Randomize
 
-		mov eax, 26
+		; If there are remaining lives, continue looping
+		cmp remaining, 0
+		jg LoopNums
 
-		call RandomRange
-		mov random, eax
-		mov newRandom, eax
+	LoopNums:
+		jmp GuessNum
 
-		call writedec
+	; For dynamically setting the prompt for the range of numbers for each difficulty level before each user guess
+	DisplayMessage:
+		cmp difficultyLevel, 0
+		je EasyMessage
+		cmp difficultyLevel, 1
+		je MediumMessage
+		cmp difficultyLevel, 2
+		je HardMessage
+		ret
 
-		call crlf
-
-		jmp LastNum
-	
-	;Jumps to last number to guess 
-	;Prompts user to keep guessing until they get a match or run out of lives
-	LastNum:
-		mov edx, offset msg
+	EasyMessage:
+		mov edx, offset easyMsg
 		call writestring
+		ret
 
-		mov eax, life
-		cmp eax, 10
-		mov remaining, 10
-		sub remaining, eax
-		mov eax, remaining
-		
-		call writedec
-
-		call crlf
-		call crlf
-
-		mov edx, offset secMsg
+	MediumMessage:
+		mov edx, offset medMsg
 		call writestring
+		ret
 
-		call readdec
-		call crlf
+	HardMessage:
+		mov edx, offset hardMsg
+		call writestring
+		ret
 
-		;Check bounds of guessed number
-		cmp eax,0
-		jl boundsError
-		cmp eax, 26
-		jg boundsError
-
-		inc life
-	
-		cmp eax, random
-		jl lessLast
-		je equalLast
-		jg greaterLast
-
-	Loop LastNum
-
-
-	;checking for if the number guessed is less or greater than original
-	;name with suffix -Last is final number
+	; Handles if the number guessed is less than original 
 	less:
 		mov edx, offset greaterMsg
 		call writestring
@@ -149,67 +191,46 @@ main proc
 
 		cmp eax, 10
 
-		je quit
-		jl FirstNum
+		je Lost
+		jl GuessNum
 
-	lessLast:
-		mov edx, offset greaterMsg
-		call writestring
-
-		call crlf
-		call crlf
-		call crlf
-
-		mov eax, life
-
-		cmp eax, 10
-		
-		je quit
-		jl LastNum
-
+	; Handles if the number guessed is equal to the original 
 	equal:
+		push eax
+		mov eax, Correct
+		call SetTextColor
+		pop eax
+
 		mov edx, offset equalMsg
 		call writestring
 
-		push eax
-		mov eax, NumberBall		; change numberball to black
-		call SetTextColor
-		pop eax
-
 		mov edx, random
 		call writedec
 
-		mov eax, DefaultColor	; change back to default
+		mov eax, DefaultColor
 		call SetTextColor
 
 		call crlf
 		call crlf
-		
-		dec life
-		
 
-		jmp Next
-
-	equalLast:
-		mov edx, offset allEqualMsg
+		; Prompts user if they would like to continue playing by restarting or quit
+		mov edx, offset quitPrompt
 		call writestring
 
-		push eax
-		mov eax, PowerBall		; change powerball to red color
-		call SetTextColor
-		pop eax
-		
-		mov edx, random
-		call writedec
-		
-		mov eax, DefaultColor	; change back to default
-		call SetTextColor
+		; Reads in user input (0 for Continue, 1 for Quit)
+		call readint
+		mov quitInput, eax
 
 		call crlf
 		call crlf
 
-		jmp quit
+		cmp quitInput, 0
+		je SetDifficulty
 
+		cmp quitInput, 1
+		je quit
+
+	; Handles if the number guessed is greater than original 
 	greater:
 		mov edx, offset lessMsg
 		call writestring
@@ -222,36 +243,42 @@ main proc
 
 		cmp eax, 10
 		
-		je quit
-		jl FirstNum
-
-	greaterLast:
-		mov edx, offset lessMsg
-		call writestring
-
-		call crlf
-		call crlf
-		call crlf
-
-		mov eax, life
-
-		cmp eax, 10
-		
-		je quit
-		jl LastNum
-
+		je Lost
+		jl GuessNum
 	
+	; Handles if the number guessed is out of bounds
 	boundsError:
+		push eax
+		mov eax, Incorrect
+		call SetTextColor
+		pop eax
+
 		mov edx, offset outOfBounds
 		call writestring
 
-		;dec life
+		mov eax, DefaultColor
+		call SetTextColor
+
 		call crlf
 		mov eax,random
-		cmp eax, newRandom
-		je LastNum
 
-		jmp Start
+		jmp GuessNum
+
+	Lost:
+		push eax
+		mov eax, Incorrect
+		call SetTextColor
+		pop eax
+
+		mov edx, offset lostMsg
+		call writestring
+
+		mov eax, DefaultColor
+		call SetTextColor
+
+		call crlf
+
+		jmp quit
 
 	quit:
 		

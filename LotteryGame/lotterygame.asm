@@ -18,17 +18,17 @@ include Irvine32.inc
 	remaining dword 10
 
 	difficultyLevel dword 0
-    difficultyPrompt byte "Select Difficulty Level (0 - Easy, 1 - Medium, 2 - Hard): ", 0
-    difficultyInput dword 0
+    	difficultyPrompt byte "Select Difficulty Level (0 - Easy, 1 - Medium, 2 - Hard): ", 0
+   	difficultyInput dword 0
 
 	quitPrompt byte "Would you like to quit? (0 - Restart, 1 - Quit): "
 	quitInput dword 0
 
 	upperBound dword 0
 
-	Correct = green
-	DefaultColor = white + (black SHL 4)
-	Incorrect = red
+	Correct = green			; green text
+	DefaultColor = white		; white text
+	Incorrect = red			; red text
 
 	difficultyError byte "Please enter a valid difficulty (0 - Easy, 1 - Medium, 2 - Hard): ", 0
 	quitError byte "Invalid input. Please only enter (0 - Restart, 1 - Quit): ", 0
@@ -315,6 +315,7 @@ main proc
 
 		jmp GuessNum
 
+	; Handles if player loses
 	Lost:
 		push eax
 		mov eax, Incorrect
@@ -330,6 +331,7 @@ main proc
 		call crlf
 		call crlf
 
+		; Prompts user to quit or continue
 		mov edx, offset quitPrompt
 		call writestring
 

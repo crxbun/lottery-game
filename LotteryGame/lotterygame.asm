@@ -30,6 +30,9 @@ include Irvine32.inc
 	DefaultColor = white + (black SHL 4)
 	Incorrect = red
 
+	difficultyError byte "Please enter a valid difficulty (0 - Easy, 1 - Medium, 2 - Hard): ", 0
+	quitError byte "Invalid input. Please only enter (0 - Restart, 1 - Quit): ", 0
+
 
 
 .code
@@ -37,17 +40,43 @@ main proc
 
 	jmp SetDifficulty
 
+	; First prompt for setting difficulty
 	SetDifficulty:
 		; Prompts the user to select the difficulty level
 		mov edx, offset difficultyPrompt
 		call writestring
+		call DifficultySetter
 
+	; Sets the difficulty
+	DifficultySetter:
 		; Reads the difficulty level input
 		call readint
 		mov difficultyLevel, eax
+
+		cmp difficultyLevel, 0
+		jl InvalidDifficulty
+
+		cmp difficultyLevel, 2
+		jg InvalidDifficulty
 		
 		jmp GenerateRandom
 
+	; Bounds error for difficulty
+	InvalidDifficulty:
+		push eax
+		mov eax, Incorrect
+		call SetTextColor
+		pop eax
+
+		mov edx, offset difficultyError
+		call writestring
+
+		mov eax, DefaultColor
+		call SetTextColor
+
+		call DifficultySetter
+		
+		
     SetUpperBound:
 		; Sets the upper bound based on difficulty level
         cmp difficultyLevel, 0
@@ -216,9 +245,18 @@ main proc
 		mov edx, offset quitPrompt
 		call writestring
 
+		call RestartOrQuit
+
+	RestartOrQuit:
 		; Reads in user input (0 for Continue, 1 for Quit)
 		call readint
 		mov quitInput, eax
+
+		cmp quitInput, 0
+		jl InvalidQuit
+
+		cmp quitInput, 1
+		jg InvalidQuit
 
 		call crlf
 		call crlf
@@ -229,6 +267,20 @@ main proc
 		cmp quitInput, 1
 		je quit
 
+	InvalidQuit:
+		push eax
+		mov eax, Incorrect
+		call SetTextColor
+		pop eax
+
+		mov edx, offset quitError
+		call writestring
+
+		mov eax, DefaultColor
+		call SetTextColor
+
+		call RestartOrQuit
+		
 	; Handles if the number guessed is greater than original 
 	greater:
 		mov edx, offset lessMsg
